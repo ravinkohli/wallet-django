@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+    {% block title %}LOGIN{% endblock %}
+{% block body %}
+    {% if next %}
+            <form method="post" class="form">
+                <input type="hidden" name="next" value={{ next }}>
+    {%else%}
+            <form action="/login/" method="post" class="form">
+    {% endif %}
+                USERNAME <input type="text" name="username"><br>
+                PASSWORD <input type="password" name="password"><br>
+                <input type="submit"><br>
+                <input type="hidden" name="next">
+                <a href="/home/"><button type="button" name="cancel">Cancel</button></a>
+                {% csrf_token %}
+            </form>
+
+{% endblock %}

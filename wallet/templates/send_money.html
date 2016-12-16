@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}SEND Money{% endblock %}
+{% block body %}
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method = "post" class="form">
+        <pre>
+            Amount: <input type="number" name="amount"><br>
+            To:     <input type="email" name="receiver-email"><br>
+            <input type="submit" value="Submit">     <a href="/accounts/profile"><button type="button" name="cancel">Cancel</button></a></pre>
+        {% csrf_token %}
+    </form>
+{% endblock %}

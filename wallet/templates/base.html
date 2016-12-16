@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load staticfiles %}
+    <link rel="stylesheet" href="{% static 'wallet/bas.css' %}">
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+<p style="color: darkslateblue; font-size: 40px; text-align: center"><strong>Welcome to the Wallet app</strong></p>
+    {% block body %}{% endblock %}
+</body>
+</html>

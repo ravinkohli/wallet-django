@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block body %}
+    <div class="nav">
+        <ul>
+            <li><a href="/add_money/">Add Money</a></li>
+            <li><a href="/subtract_money/">Send Money</a></li>
+            <li><a href="/update_profile/">Update Profile</a></li>
+            <li><a href="/trans/">Transactions</a></li>
+            <li><a href="/logout/">Log Out</a></li>
+        </ul>
+    </div>
+    Name: {{ user.first_name }} {{ user.last_name }}<br>Date Of Birth: {{ user.userprofile.date_ob }}<br>
+    Balance: {{ wallet.amount }}<br>
+
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}ADD Money{% endblock %}
+{% block body %}
+    <form method="post" class="form">
+        <pre>
+        Amount:<input type="number" name="amount"><br>
+        <input type="submit" value="Submit">     <a href="/accounts/profile"><button type="button" name="cancel">Cancel</button></a></pre>
+        {% csrf_token %}
+    </form>
+{% endblock %}

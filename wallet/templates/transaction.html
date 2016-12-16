@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block body %}
+    {{ user.first_name }} {{ user.last_name }}<br>{{ user.userprofile.date_ob }}<br>
+    <div id="table"><table>
+
+        <tr>
+            <th>From</th><th>to</th><th>Amount</th>
+        </tr>
+        {% for field in transaction %}
+            <tr>
+                <td>{{ field.from_name }}</td>
+                <td>{{ field.to }}</td>
+                <td>{{ field.amount }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+
+    <center><a href="/accounts/profile"><button type="button" name="cancel">Cancel</button></a></center>
+
+{% endblock %}

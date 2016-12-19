@@ -3,18 +3,27 @@ from django.contrib.auth.decorators import login_required
 from wallet.models import Wallet,Transaction, Userprofile
 from django.db import transaction
 from datetime import datetime
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from wallet.forms import UserForm, ProfileForm
 from django.contrib import messages
-
+from django.contrib.auth.models import User
 # Create your views here.
+
+
+def receive_money(request):
+    username = request.GET.get("username", None)
+    amount = request.GET.get("amount", None)
+    wallet = Wallet.objects.get(username=username)
+    wallet.add_money(int(amount))
+    wallet.save()
+    wallet = Wallet.objects.get(username=request.user.username)
+    return render(request, 'user_profile.html', {'user': request.user,'userprofile': Userprofile.objects.get(user=request.user), 'wallet': wallet})
 
 
 def add_money(request):
     if request.user:
         if request.POST and request.POST.get('amount'):
             username = request.user.username
-            print username
             add_amount = request.POST.get('amount')
             wallet = Wallet.objects.get(username=username)
             wallet.add_money(add_amount)
@@ -31,20 +40,28 @@ def add_money(request):
 
 def subtract_money(request):
     if request.user:
+        users = User.objects.all()
+        users_ids = users.values_list('id', flat=True)
+        users_list = []
+        for id in users_ids:
+            user = users.get(pk=id)
+            if user.username != "ravinkohli" and user.username != request.user.username:
+                users_list.append(user)
         if request.POST and request.POST.get('amount'):
             username = request.user.username
             withdraw = request.POST.get('amount')
             wallet = Wallet.objects.get(pk=request.user.userprofile.wallet_id_id)
-            if withdraw > wallet.amount:
-                return render(request, 'send_money.html', {'error': 'Amount can not be greater than balance'})
+            # if withdraw > wallet.amount:
+            #     return render(request, 'send_money.html', {'error': 'Amount can not be greater than balance','users': users_list})
             wallet.subtract_money(withdraw)
             wallet.save()
             now = datetime.now()
-            trans = Transaction(from_name=username, wallet_id=wallet,to=request.POST.get('receiver-email'), date=now, amount=withdraw)
+            trans = Transaction(from_name=username, wallet_id=wallet,to=request.POST.get('receiver'), date=now, amount=withdraw)
             trans.save()
-            return render(request, 'user_profile.html', {'user': request.user, 'wallet': wallet})
+            print request.POST.get('receiver')
+            return redirect('/receive/?username=%s&amount=%s' % (request.POST.get('receiver'), withdraw))
         else:
-            return render(request, 'send_money.html')
+            return render(request, 'send_money.html',{'users': users_list})
     else:
         return HttpResponseRedirect('/login/?next={}'.format('/subtract_money/'))
 

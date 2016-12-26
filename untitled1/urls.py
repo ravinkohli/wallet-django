@@ -15,7 +15,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from . import views
-from wallet.views import user_profile,add_money,subtract_money, update_profile, transaction, receive_money
+from wallet.views import *
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
@@ -27,6 +27,8 @@ urlpatterns = [
     url(r'^update_profile/$', update_profile),
     url(r'^trans/$', transaction),
     url(r'^home/$', views.home),
-    url(r'^receive/$', receive_money)
+    url(r'^receive/$', receive_money),
+    url(r'^wallets/$', wallet_list),
+    url(r'^wallets/(?P<pk>[0-9]+)/$', wallet_detail),
 ]
 #?P<username> ?P<amount>

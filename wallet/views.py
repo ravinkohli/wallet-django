@@ -1,5 +1,7 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
+from rest_framework.renderers import JSONRenderer
+from wallet.serialisers import WalletSerializer
 from wallet.models import Wallet,Transaction, Userprofile
 from django.db import transaction
 from datetime import datetime
@@ -102,6 +104,7 @@ def user_profile(request):
         context['sex'] = request.user.userprofile.sex
     return render(request, 'user_profile.html', context)
 
+
 @login_required
 def transaction(request):
     context = {}
@@ -109,3 +112,34 @@ def transaction(request):
     context['transaction'] = trans
     context['user'] = request.user
     return render(request, 'transaction.html', context)
+
+
+class JSONResponse(HttpResponse):
+    """
+    An HttpResponse that renders its content into JSON.
+    """
+    def __init__(self, data, **kwargs):
+        content = JSONRenderer().render(data)
+        kwargs['content_type'] = 'application/json'
+        super(JSONResponse, self).__init__(content, **kwargs)
+
+
+def wallet_list(request):
+    if request.method == 'GET':
+        wallets = Wallet.objects.all()
+        serializer = WalletSerializer(wallets, many=True)
+        return JSONResponse(serializer.data)
+
+
+def wallet_detail(request, pk):
+    """
+    Retrieve, update or delete a code snippet.
+    """
+    try:
+        wallet = Wallet.objects.get(pk=pk)
+    except Wallet.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        serializer = WalletSerializer(wallet)
+        return JSONResponse(serializer.data)

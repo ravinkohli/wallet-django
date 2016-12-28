@@ -28,7 +28,8 @@ urlpatterns = [
     url(r'^trans/$', transaction),
     url(r'^home/$', views.home),
     url(r'^receive/$', receive_money),
-    url(r'^wallets/$', wallet_list),
-    url(r'^wallets/(?P<pk>[0-9]+)/$', wallet_detail),
+    url(r'^wallets/$', WalletList.as_view()),
+    url(r'^wallets/(?P<pk>[0-9]+)/$', WalletDetail.as_view()),
+    url(r'^transactions/(?P<pk>[0-9]+)/$', transaction_list)
 ]
 #?P<username> ?P<amount>

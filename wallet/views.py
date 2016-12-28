@@ -1,14 +1,24 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
-from rest_framework.renderers import JSONRenderer
-from wallet.serialisers import WalletSerializer
-from wallet.models import Wallet,Transaction, Userprofile
 from django.db import transaction
-from datetime import datetime
-from django.http import HttpResponseRedirect, HttpResponse
-from wallet.forms import UserForm, ProfileForm
+from django.http import HttpResponseRedirect  # , HttpResponse
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
+from wallet.serialisers import WalletSerializer, TransactionSerializer
+from wallet.models import Wallet,Transaction, Userprofile
+from wallet.forms import UserForm, ProfileForm
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
+
+
+
+# from rest_framework.renderers import JSONRenderer
+
 # Create your views here.
 
 
@@ -60,7 +70,7 @@ def subtract_money(request):
             now = datetime.now()
             trans = Transaction(from_name=username, wallet_id=wallet,to=request.POST.get('receiver'), date=now, amount=withdraw)
             trans.save()
-            print request.POST.get('receiver')
+            # print request.POST.get('receiver')
             return redirect('/receive/?username=%s&amount=%s' % (request.POST.get('receiver'), withdraw))
         else:
             return render(request, 'send_money.html',{'users': users_list})
@@ -114,32 +124,50 @@ def transaction(request):
     return render(request, 'transaction.html', context)
 
 
-class JSONResponse(HttpResponse):
-    """
-    An HttpResponse that renders its content into JSON.
-    """
-    def __init__(self, data, **kwargs):
-        content = JSONRenderer().render(data)
-        kwargs['content_type'] = 'application/json'
-        super(JSONResponse, self).__init__(content, **kwargs)
+# class JSONResponse(HttpResponse):
+#     """
+#     An HttpResponse that renders its content into JSON.
+#     """
+#     def __init__(self, data, **kwargs):
+#         content = JSONRenderer().render(data)
+#         kwargs['content_type'] = 'application/json'
+#         super(JSONResponse, self).__init__(content, **kwargs)
+#
 
 
-def wallet_list(request):
+class WalletList(generics.ListAPIView):
+    queryset = Wallet.objects.all()
+    serializer_class = WalletSerializer
+
+
+class WalletDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Wallet.objects.all()
+    serializer_class = WalletSerializer
+
+
+@api_view(['GET', 'POST'])
+@csrf_exempt
+def transaction_list(request, pk):
     if request.method == 'GET':
-        wallets = Wallet.objects.all()
-        serializer = WalletSerializer(wallets, many=True)
-        return JSONResponse(serializer.data)
+        if Userprofile.objects.get(user_id=pk):
+            wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
+            transactions = Transaction.objects.filter(wallet_id=wallet_id)
+            serializer = TransactionSerializer(transactions, many=True)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    elif request.method == "POST":
+        data = JSONParser().parse(request)
+        if Userprofile.objects.get(user_id=pk):
+            wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
+            data["wallet_id"] = wallet_id
+            serializer = TransactionSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-def wallet_detail(request, pk):
-    """
-    Retrieve, update or delete a code snippet.
-    """
-    try:
-        wallet = Wallet.objects.get(pk=pk)
-    except Wallet.DoesNotExist:
-        return HttpResponse(status=404)
-
-    if request.method == 'GET':
-        serializer = WalletSerializer(wallet)
-        return JSONResponse(serializer.data)

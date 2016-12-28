@@ -39,7 +39,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'wallet'
+    'wallet',
+    'rest_framework'
 )
 
 AUTH_PROFILE_MODULE = 'wallet.Userprofile'

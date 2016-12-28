@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
-from wallet.serialisers import WalletSerializer, TransactionSerializer
+from wallet.serialisers import *
 from wallet.models import Wallet,Transaction, Userprofile
 from wallet.forms import UserForm, ProfileForm
 from rest_framework import generics
@@ -171,3 +171,6 @@ def transaction_list(request, pk):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Userprofile.objects.all()
+    serializer_class = UserProfileSerializer

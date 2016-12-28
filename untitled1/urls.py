@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^receive/$', receive_money),
     url(r'^wallets/$', WalletList.as_view()),
     url(r'^wallets/(?P<pk>[0-9]+)/$', WalletDetail.as_view()),
-    url(r'^transactions/(?P<pk>[0-9]+)/$', transaction_list)
+    url(r'^transactions/(?P<pk>[0-9]+)/$', transaction_list),
+    url(r'^users/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
 ]
 #?P<username> ?P<amount>

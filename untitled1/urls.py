@@ -16,6 +16,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from . import views
 from wallet.views import *
+from rest_framework.authtoken import views as view
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
@@ -32,5 +33,6 @@ urlpatterns = [
     url(r'^wallets/(?P<pk>[0-9]+)/$', WalletDetail.as_view()),
     url(r'^transactions/(?P<pk>[0-9]+)/$', transaction_list),
     url(r'^users/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
+    url(r'^api-token-auth/', view.obtain_auth_token)
 ]
 #?P<username> ?P<amount>

@@ -14,9 +14,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
-
-
-
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import authentication_classes,permission_classes
 # from rest_framework.renderers import JSONRenderer
 
 # Create your views here.
@@ -141,36 +141,71 @@ class WalletList(generics.ListAPIView):
 
 
 class WalletDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Wallet.objects.all()
-    serializer_class = WalletSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if int(kwargs['pk']) == int(request.user.userprofile.wallet_id_id):
+            wallet = Wallet.objects.filter(id=kwargs['pk'])
+            serializer = WalletSerializer(wallet, many=True)
+            print("Serializer: %s", serializer.data)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['GET', 'POST'])
 @csrf_exempt
+@authentication_classes((TokenAuthentication,))
+@permission_classes((IsAuthenticated,))
 def transaction_list(request, pk):
-    if request.method == 'GET':
-        if Userprofile.objects.get(user_id=pk):
-            wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
-            transactions = Transaction.objects.filter(wallet_id=wallet_id)
-            serializer = TransactionSerializer(transactions, many=True)
-            return Response(serializer.data)
-        else:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    if int(pk) == int(request.user.id):
+        if request.method == 'GET':
+            if Userprofile.objects.get(user_id=pk):
+                wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
+                transactions = Transaction.objects.filter(wallet_id=wallet_id)
+                serializer = TransactionSerializer(transactions, many=True)
+                return Response(serializer.data)
+            else:
+                return Response(status=status.HTTP_404_NOT_FOUND)
 
-    elif request.method == "POST":
-        data = JSONParser().parse(request)
-        if Userprofile.objects.get(user_id=pk):
-            wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
-            data["wallet_id"] = wallet_id
-            serializer = TransactionSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        elif request.method == "POST":
+            data = JSONParser().parse(request)
+            if Userprofile.objects.get(user_id=pk):
+                wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
+                data["wallet_id"] = wallet_id
+                serializer = TransactionSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Userprofile.objects.all()
-    serializer_class = UserProfileSerializer
+class UserDetail(generics.RetrieveAPIView):# UpdateAPIView):
+        authentication_classes = (TokenAuthentication,)
+        permission_classes = (IsAuthenticated,)
+
+        def get(self, request, *args, **kwargs):
+            if int(kwargs['pk']) == int(request.user.id):
+                userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
+                serializer = UserProfileSerializer(userprofile)
+                return Response(serializer.data)
+            else:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+#         def put(self, request, *args, **kwargs):
+#             if int(kwargs['pk']) == int(request.user.id):
+#                 data = JSONParser().parse(request)
+#                 userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
+#                 serializer = UserProfileSerializer(userprofile, data=data, many=True)
+#                 if serializer.is_valid():
+#                     serializer.save()
+#                     return Response(serializer.data)
+#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response(status=status.HTTP_401_UNAUTHORIZED)
+#

@@ -26,6 +26,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email')
+        extra_kwargs = {
+            'username': {'read_only': True},
+            'email': {'read_only': True}
+        }
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -36,3 +40,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'wallet_id': {'read_only': True}
         }
+
+    def update(self, instance, validated_data):
+        """
+        Update and return an existing `Snippet` instance, given the validated data.
+        """
+        instance.date_ob = validated_data.get('data_ob', instance.date_ob)
+        instance.sex = validated_data.get('sex', instance.sex)
+        instance.save()
+        return instance

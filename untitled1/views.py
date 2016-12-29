@@ -90,7 +90,7 @@ def createuser(request):
         data = JSONParser().parse(request)
         success = create_user_api(data)
         if success["status"]:
-            return Response(status=status.HTTP_201_CREATED)
+            return Response({"success": "success"}, status=status.HTTP_201_CREATED)
         elif success["errors"]:
             return Response({"errors": success["errors"]}, status=status.HTTP_205_RESET_CONTENT)
         else:

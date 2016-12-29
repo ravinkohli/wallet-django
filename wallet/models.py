@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 # from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+
 def validate_not_neg(value):
     if value < 0:
         raise ValidationError(

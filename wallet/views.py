@@ -3,21 +3,23 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponseRedirect  # , HttpResponse
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 from datetime import datetime
 from wallet.serialisers import *
 from wallet.models import Wallet,Transaction, Userprofile
 from wallet.forms import UserForm, ProfileForm
 from rest_framework import generics
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework.parsers import JSONParser
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import authentication_classes,permission_classes
+from rest_framework.decorators import api_view,authentication_classes,permission_classes
+from rest_framework.response import Response
+from update_functions import *
+from rest_framework import status
+from rest_framework.authentication import SessionAuthentication
+
 # from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
 
 # Create your views here.
 
@@ -40,7 +42,7 @@ def add_money(request):
             wallet = Wallet.objects.get(username=username)
             wallet.add_money(add_amount)
             wallet.save()
-            now = datetime.now()
+            now = datetime.datetime.now()
             trans = Transaction(from_name=username, wallet_id=wallet, date=now, amount=add_amount)
             trans.save()
             return render(request, 'user_profile.html', {'user': request.user,'userprofile': Userprofile.objects.get(user=request.user), 'wallet': wallet})
@@ -51,6 +53,11 @@ def add_money(request):
 
 
 def subtract_money(request):
+    """
+    Used to send money
+    :param request:
+    :return:
+    """
     if request.user:
         users = User.objects.all()
         users_ids = users.values_list('id', flat=True)
@@ -63,11 +70,11 @@ def subtract_money(request):
             username = request.user.username
             withdraw = request.POST.get('amount')
             wallet = Wallet.objects.get(pk=request.user.userprofile.wallet_id_id)
-            # if withdraw > wallet.amount:
-            #     return render(request, 'send_money.html', {'error': 'Amount can not be greater than balance','users': users_list})
+            if int(withdraw) > int(wallet.amount):
+                return render(request, 'send_money.html', {'error': 'Amount can not be greater than balance','users': users_list})
             wallet.subtract_money(withdraw)
             wallet.save()
-            now = datetime.now()
+            now = datetime.datetime.now()
             trans = Transaction(from_name=username, wallet_id=wallet,to=request.POST.get('receiver'), date=now, amount=withdraw)
             trans.save()
             # print request.POST.get('receiver')
@@ -140,7 +147,7 @@ class WalletList(generics.ListAPIView):
     serializer_class = WalletSerializer
 
 
-class WalletDetail(generics.RetrieveUpdateDestroyAPIView):
+class WalletDetail(generics.RetrieveUpdateAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
@@ -154,58 +161,75 @@ class WalletDetail(generics.RetrieveUpdateDestroyAPIView):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
-@api_view(['GET', 'POST'])
-@csrf_exempt
-@authentication_classes((TokenAuthentication,))
-@permission_classes((IsAuthenticated,))
-def transaction_list(request, pk):
-    if int(pk) == int(request.user.id):
-        if request.method == 'GET':
-            if Userprofile.objects.get(user_id=pk):
-                wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
-                transactions = Transaction.objects.filter(wallet_id=wallet_id)
-                serializer = TransactionSerializer(transactions, many=True)
-                return Response(serializer.data)
-            else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+class TransactionDetail(generics.RetrieveUpdateAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
-        elif request.method == "POST":
+    def get(self, request, *args, **kwargs):
+        if int(kwargs['pk']) == int(request.user.id):
+            wallet_id = Userprofile.objects.get(user_id=kwargs['pk']).wallet_id_id
+            transactions = Transaction.objects.filter(wallet_id=wallet_id)
+            serializer = TransactionSerializer(transactions, many=True)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def update(self, request, *args, **kwargs):
+        if int(kwargs['pk']) == int(request.user.id):
             data = JSONParser().parse(request)
-            if Userprofile.objects.get(user_id=pk):
-                wallet_id = Userprofile.objects.get(user_id=pk).wallet_id_id
-                data["wallet_id"] = wallet_id
-                serializer = TransactionSerializer(data=data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
-    else:
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+            add_transaction(request, data)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
-class UserDetail(generics.RetrieveAPIView):# UpdateAPIView):
-        authentication_classes = (TokenAuthentication,)
-        permission_classes = (IsAuthenticated,)
+class UserDetail(generics.RetrieveUpdateAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
-        def get(self, request, *args, **kwargs):
-            if int(kwargs['pk']) == int(request.user.id):
-                userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
-                serializer = UserProfileSerializer(userprofile)
-                return Response(serializer.data)
-            else:
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
+    def get(self, request, *args, **kwargs):
+        if int(kwargs['pk']) == int(request.user.id):
+            userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
+            serializer = UserProfileSerializer(userprofile)
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-#         def put(self, request, *args, **kwargs):
-#             if int(kwargs['pk']) == int(request.user.id):
-#                 data = JSONParser().parse(request)
-#                 userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
-#                 serializer = UserProfileSerializer(userprofile, data=data, many=True)
-#                 if serializer.is_valid():
-#                     serializer.save()
-#                     return Response(serializer.data)
-#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#             else:
-#                 return Response(status=status.HTTP_401_UNAUTHORIZED)
-#
+    def update(self, request, *args, **kwargs):
+        if int(kwargs['pk']) == int(request.user.id):
+            data = JSONParser().parse(request)
+            update_userprofile(request, data)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication,])
+@permission_classes([IsAuthenticated, ])
+def add_money_api(request):
+    if request.method == "POST":
+        data = JSONParser().parse(request)
+        wallet = Wallet.objects.get(username=request.user.username)
+        if data["amount"]:
+            wallet.add_money(data["amount"])
+            wallet.save()
+            trans = Transaction(from_name=request.user.username, wallet_id=wallet, date=datetime.datetime.now(), amount=data["amount"])
+            trans.save()
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response(status=status.HTTP_206_PARTIAL_CONTENT)
+
+
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication,])
+@permission_classes([IsAuthenticated, ])
+@csrf_exempt
+def send_money(request):
+    if request.method == "POST":
+        data = JSONParser().parse(request)
+        success = send_money_api(request, data)
+        if success["status"]:
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response({"error": success["errors"]}, status=status.HTTP_400_BAD_REQUEST)

@@ -21,6 +21,17 @@ class TransactionSerializer(serializers.ModelSerializer):
             'from_name': {'read_only': True}
         }
 
+    # def update(self, instance, validated_data):
+    #     """
+    #     Update and return an existing `Snippet` instance, given the validated data.
+    #     """
+    #     instance.from_name = validated_data.get('from_name', instance.from_name)
+    #     # instance.wallet_id = Wallet.objects.get(wallet_id)
+    #     instance.date = validated_data.get('date', instance.date)
+    #     instance.amount = validated_data.get('amount', instance.amount)
+    #     instance.to = validated_data.get('to', instance.to)
+    #     instance.save()
+    #     return instance
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,12 +51,3 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'wallet_id': {'read_only': True}
         }
-
-    def update(self, instance, validated_data):
-        """
-        Update and return an existing `Snippet` instance, given the validated data.
-        """
-        instance.date_ob = validated_data.get('data_ob', instance.date_ob)
-        instance.sex = validated_data.get('sex', instance.sex)
-        instance.save()
-        return instance

@@ -1,11 +1,11 @@
-from django.db import models, connection
+from django.db import models  # , connection
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 # Create your models here.
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+# from django.conf import settings
+# from django.contrib.auth import get_user_model
+# from django.db.models.signals import post_save
+# from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 def validate_not_neg(value):
@@ -21,7 +21,7 @@ class Wallet(models.Model):
     amount = models.IntegerField(validators=[validate_not_neg], default=0)
 
     def add_money(self, money):
-        self.amount = self.amount + int(money)
+        self.amount += int(money)
         self.save()
 
     def subtract_money(self, money):
@@ -43,12 +43,6 @@ class Transaction(models.Model):
     to = models.EmailField(null=True, blank=True)
     def __str__(self):
         return self.id
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        Token.objects.create(user=instance)
 
 
 class Userprofile(models.Model):

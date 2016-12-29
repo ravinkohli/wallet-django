@@ -1,8 +1,18 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
-from wallet.models import Wallet, Userprofile
+from wallet.models import Wallet, Userprofile, Transaction
 from django.http import HttpResponseRedirect
 from wallet.forms import UserReg
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view,authentication_classes,permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.parsers import JSONParser
+from wallet.update_functions import create_user_api
+import datetime
 
 
 def user_login(request):
@@ -13,6 +23,8 @@ def user_login(request):
         if user is not None:
             if user.is_active:
                 login(request, user)
+                # token = Token.objects.create(user=user)
+                # token.save()
                 # if request.POST['next']:
                 #     return HttpResponseRedirect(request.POST['next'])
                 # else:
@@ -55,3 +67,33 @@ def create_user(request):
 
 def home(request):
     return render(request, 'home.html')
+
+
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication, ])
+@permission_classes([IsAuthenticated, ])
+def logout(request):
+    if request.user and request.method == "GET":
+        token = Token.objects.get(user=request.user)
+        token.delete()
+        return Response(status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([])
+@csrf_exempt
+def createuser(request):
+    if request.method == "POST":
+        data = JSONParser().parse(request)
+        success = create_user_api(data)
+        if success["status"]:
+            return Response(status=status.HTTP_201_CREATED)
+        elif success["errors"]:
+            return Response({"errors": success["errors"]}, status=status.HTTP_205_RESET_CONTENT)
+        else:
+            return Response(status=status.HTTP_206_PARTIAL_CONTENT)
+
+

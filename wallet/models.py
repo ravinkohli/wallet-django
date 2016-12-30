@@ -6,7 +6,15 @@ from django.contrib.auth.models import User
 # from django.contrib.auth import get_user_model
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
-from rest_framework.authtoken.models import Token
+from rest_framework_expiring_authtoken.models import ExpiringToken
+import binascii
+import os
+from django.utils import timezone
+from rest_framework_expiring_authtoken.settings import token_settings
+from django.conf import settings
+from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
+from django.utils.translation import ugettext_lazy as _
 
 
 def validate_not_neg(value):
@@ -42,6 +50,7 @@ class Transaction(models.Model):
     date = models.DateField()
     amount = models.IntegerField()
     to = models.EmailField(null=True, blank=True)
+
     def __str__(self):
         return self.id
 
@@ -56,12 +65,42 @@ class Userprofile(models.Model):
         return str(self.user)
 
 
+@python_2_unicode_compatible
+class DeviceToken(models.Model):
+    """
+    The default authorization token model.
+    """
+    key = models.CharField(_("Key"), max_length=40, primary_key=True)
+    user = models.ForeignKey(User, related_name='%(class)s_auth_token',
+                             on_delete=models.CASCADE,)
+    created = models.DateTimeField(_("Created"), auto_now_add=True)
+    device_browser = models.CharField(max_length=25, null=True)
 
-    # @receiver(post_save, sender=User)
-    # def create_user_profile(sender, instance, created, **kwargs):
-    #     if created:
-    #         Userprofile.objects.create(user=instance)
-    #
-    # @receiver(post_save, sender=User)
-    # def save_user_profile(sender, instance, **kwargs):
-    #     instance.profile.save()
+    class Meta:
+        # Work around for a bug in Django:
+        # https://code.djangoproject.com/ticket/19422
+        #
+        # Also see corresponding ticket:
+        # https://github.com/tomchristie/django-rest-framework/issues/705
+        abstract = 'rest_framework.authtoken' not in settings.INSTALLED_APPS
+        verbose_name = _("Token")
+        verbose_name_plural = _("Tokens")
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super(DeviceToken, self).save(*args, **kwargs)
+
+    def generate_key(self):
+        return binascii.hexlify(os.urandom(20)).decode()
+
+    def __str__(self):
+        return self.key
+
+    def expired(self):
+        """Return boolean indicating token expiration."""
+        now = timezone.now()
+        if self.created < now - token_settings.EXPIRING_TOKEN_LIFESPAN:
+            return True
+
+        return False

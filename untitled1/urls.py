@@ -16,7 +16,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from . import views
 from wallet.views import *
-from rest_framework.authtoken import views as view
+from wallet.update_functions import obtain_expiring_auth_token
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
@@ -30,13 +30,14 @@ urlpatterns = [
     url(r'^home/$', views.home),
     url(r'^receive/$', receive_money),
     url(r'^wallets/$', WalletList.as_view()),
-    url(r'^wallets/(?P<pk>[0-9]+)/$', WalletDetail.as_view()),
+    url(r'^wallet-details/$', WalletDetail.as_view()),
     url(r'^transactions/(?P<pk>[0-9]+)/$', TransactionDetail.as_view()),
     url(r'^users/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
-    url(r'^api-token-auth/', view.obtain_auth_token),
+    url(r'^api-token-auth/', obtain_expiring_auth_token),
     url(r'^end-session/$', views.logout),
     url(r'^create-user/$', views.createuser),
     url(r'^add_money_api/$', add_money_api),
     url(r'^send_money/$', send_money)
 ]
+
 #?P<username> ?P<amount>

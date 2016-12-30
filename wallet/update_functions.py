@@ -1,7 +1,10 @@
 from wallet.models import *
 import datetime
 from django.views.decorators.csrf import csrf_exempt
-
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.response import Response
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 def add_transaction(request, data):
     wallet = Wallet.objects.get(username=request.user.username)
@@ -62,3 +65,38 @@ def send_money_api(request, data):
             return {"status": True}
     else:
         return {"status": False, "errors": "Missing content"}
+
+
+"""Utility views for Expiring Tokens.
+Classes:
+    ObtainExpiringAuthToken: View to provide tokens to clients.
+"""
+
+
+class ObtainExpiringAuthToken(ObtainAuthToken):
+
+    """View enabling username/password exchange for expiring token."""
+
+    model = DeviceToken
+
+    def post(self, request, *args, **kwargs):
+        """Respond to POSTed username/password with token."""
+        serializer = AuthTokenSerializer(data=request.data)
+
+        if serializer.is_valid():
+            token, created = DeviceToken.objects.get_or_create(user=serializer.validated_data['user'], device_browser=(request.user_agent.browser.family+
+                                                                                                              request.user_agent.os.family))
+
+            if token.expired():
+                # If the token is expired, generate a new one.
+                token = DeviceToken.objects.create(
+                    user=serializer.validated_data['user'],
+                    device_browser=(request.user_agent.browser.family +
+                                    request.user_agent.os.family)
+                )
+            data = {'token': token.key}
+            return Response(data)
+
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+obtain_expiring_auth_token = ObtainExpiringAuthToken.as_view()

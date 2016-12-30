@@ -41,7 +41,9 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'wallet',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'rest_framework_expiring_authtoken',
+    'django_user_agents'
 )
 
 AUTH_PROFILE_MODULE = 'wallet.Userprofile'
@@ -55,6 +57,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware'
 )
 
 ROOT_URLCONF = 'untitled1.urls'

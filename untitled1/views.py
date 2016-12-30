@@ -1,11 +1,10 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
-from wallet.models import Wallet, Userprofile, Transaction
+from wallet.models import Wallet, Userprofile, Transaction, DeviceToken
 from django.http import HttpResponseRedirect
 from wallet.forms import UserReg
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
+from wallet.authorisations import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from rest_framework.response import Response
@@ -74,7 +73,8 @@ def home(request):
 @permission_classes([IsAuthenticated, ])
 def logout(request):
     if request.user and request.method == "GET":
-        token = Token.objects.get(user=request.user)
+        token = DeviceToken.objects.get(user=request.user, device_browser=(request.user_agent.browser.family+
+                                                                     request.user_agent.os.family))
         token.delete()
         return Response(status=status.HTTP_200_OK)
     else:

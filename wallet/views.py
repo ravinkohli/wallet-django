@@ -3,21 +3,19 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponseRedirect  # , HttpResponse
 from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 from datetime import datetime
 from wallet.serialisers import *
-from wallet.models import Wallet,Transaction, Userprofile
 from wallet.forms import UserForm, ProfileForm
 from rest_framework import generics
-from rest_framework.authentication import TokenAuthentication
+from wallet.authorisations import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from rest_framework.response import Response
-from update_functions import *
+from wallet.models import Wallet,Transaction, Userprofile
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication
-
+from update_functions import *
 # from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
@@ -152,13 +150,10 @@ class WalletDetail(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if int(kwargs['pk']) == int(request.user.userprofile.wallet_id_id):
-            wallet = Wallet.objects.filter(id=kwargs['pk'])
-            serializer = WalletSerializer(wallet, many=True)
-            print("Serializer: %s", serializer.data)
-            return Response(serializer.data)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        wallet = Wallet.objects.filter(id=request.user.userprofile.wallet_id_id)
+        serializer = WalletSerializer(wallet, many=True)
+        print("Serializer: %s", serializer.data)
+        return Response(serializer.data)
 
 
 class TransactionDetail(generics.RetrieveUpdateAPIView):
@@ -166,13 +161,10 @@ class TransactionDetail(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if int(kwargs['pk']) == int(request.user.id):
-            wallet_id = Userprofile.objects.get(user_id=kwargs['pk']).wallet_id_id
-            transactions = Transaction.objects.filter(wallet_id=wallet_id)
-            serializer = TransactionSerializer(transactions, many=True)
-            return Response(serializer.data)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        wallet_id = request.user.userprofile.wallet_id_id
+        transactions = Transaction.objects.filter(wallet_id=wallet_id)
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         if int(kwargs['pk']) == int(request.user.id):

@@ -91,8 +91,6 @@ class DeviceToken(models.Model):
     def save(self, *args, **kwargs):
         if not self.key:
             self.key = self.generate_key()
-        if not self.expired_date:
-            self.expired_date = self.created.date() + token_settings.EXPIRING_TOKEN_LIFESPAN
         return super(DeviceToken, self).save(*args, **kwargs)
 
     def generate_key(self):

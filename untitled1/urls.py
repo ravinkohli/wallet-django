@@ -41,4 +41,3 @@ urlpatterns = [
     url(r'^sessions/$', get_all_sessions)
 ]
 
-#?P<username> ?P<amount>

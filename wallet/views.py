@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import HttpResponseRedirect  # , HttpResponse
+from django.http import HttpResponseRedirect
 from django.contrib import messages
 from datetime import datetime
 from wallet.serialisers import *
@@ -10,13 +10,8 @@ from rest_framework import generics
 from wallet.authorisations import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
-from rest_framework.response import Response
-from wallet.models import Wallet,Transaction, Userprofile
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 from rest_framework import status
 from update_functions import *
-# from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 
 # Create your views here.
@@ -197,7 +192,7 @@ def add_money_api(request):
         if data["amount"]:
             wallet.add_money(data["amount"])
             wallet.save()
-            trans = Transaction(from_name=request.user.username, wallet_id=wallet, date=datetime.datetime.now(), amount=data["amount"])
+            trans = Transaction(from_name=request.user.username, wallet_id=wallet, date=datetime.datetime.now(), amount=data["amount"], to="self")
             trans.save()
             return Response({"errors": "No errors"}, status=status.HTTP_202_ACCEPTED)
         else:
@@ -236,3 +231,16 @@ def get_all_sessions(request):
             session["expiry"] = token.expired_date
             sessions.append(session)
         return Response({"sessions": sessions}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication,])
+@permission_classes([IsAuthenticated,])
+@csrf_exempt
+def get_users(request):
+    users = User.objects.all()
+    all_users = []
+    for user in users:
+        if user != request.user and not user.is_staff:
+            all_users.append([user.username])
+    return Response({"errors": "No Errors", "users": all_users}, status=status.HTTP_200_OK)

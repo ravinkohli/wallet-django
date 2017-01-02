@@ -52,7 +52,7 @@ class Transaction(models.Model):
     to = models.EmailField(null=True, blank=True)
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 
 class Userprofile(models.Model):

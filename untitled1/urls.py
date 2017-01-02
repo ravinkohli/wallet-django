@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^create-user/$', views.createuser),
     url(r'^add_money_api/$', add_money_api),
     url(r'^send_money/$', send_money),
-    url(r'^sessions/$', get_all_sessions)
+    url(r'^sessions/$', get_all_sessions),
+    url(r'^get-users/$', get_users)
 ]
 

@@ -64,6 +64,9 @@ def send_money_api(request, data):
             transaction = Transaction(from_name=request.user.username, wallet_id=wallet, date=datetime.datetime.now(),
                                       to=data['to'], amount=data["amount"])
             transaction.save()
+            wallet = Wallet.objects.get(username=data["to"])
+            wallet.add_money(data["amount"])
+            wallet.save()
             return {"status": True}
     else:
         return {"status": False, "errors": "Missing content"}

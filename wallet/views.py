@@ -167,12 +167,9 @@ class TransactionDetail(generics.RetrieveUpdateAPIView):
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        if int(kwargs['pk']) == int(request.user.id):
-            data = JSONParser().parse(request)
-            add_transaction(request, data)
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        data = JSONParser().parse(request)
+        add_transaction(request, data)
+        return Response(status=status.HTTP_200_OK)
 
 
 class UserDetail(generics.RetrieveUpdateAPIView):
@@ -180,20 +177,14 @@ class UserDetail(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        if int(kwargs['pk']) == int(request.user.id):
-            userprofile = Userprofile.objects.get(user_id=kwargs['pk'])
-            serializer = UserProfileSerializer(userprofile)
-            return Response(serializer.data)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        userprofile = Userprofile.objects.get(user_id=request.user.id)
+        serializer = UserProfileSerializer(userprofile)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        if int(kwargs['pk']) == int(request.user.id):
-            data = JSONParser().parse(request)
-            update_userprofile(request, data)
-            return Response(status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        data = JSONParser().parse(request)
+        update_userprofile(request, data)
+        return Response({"errors": "No errors"}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -208,9 +199,9 @@ def add_money_api(request):
             wallet.save()
             trans = Transaction(from_name=request.user.username, wallet_id=wallet, date=datetime.datetime.now(), amount=data["amount"])
             trans.save()
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return Response({"errors": "No errors"}, status=status.HTTP_202_ACCEPTED)
         else:
-            return Response(status=status.HTTP_206_PARTIAL_CONTENT)
+            return Response({"errors": "Amount not specified"}, status=status.HTTP_206_PARTIAL_CONTENT)
 
 
 @api_view(["POST"])
@@ -222,6 +213,26 @@ def send_money(request):
         data = JSONParser().parse(request)
         success = send_money_api(request, data)
         if success["status"]:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return Response({"errors": "No errors"}, status=status.HTTP_202_ACCEPTED)
         else:
-            return Response({"error": success["errors"]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"errors": success["errors"]}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication,])
+@permission_classes([IsAuthenticated,])
+@csrf_exempt
+def get_all_sessions(request):
+    if request.method == "GET":
+        tokens = DeviceToken.objects.filter(user=request.user)
+        sessions = []
+        for token in tokens:
+            if token.expired():
+                continue
+            session = {}
+            session["token"] = token.key
+            session["device"] = token.device_browser
+            session["created"] = token.created
+            session["expiry"] = token.expired_date
+            sessions.append(session)
+        return Response({"sessions": sessions}, status=status.HTTP_200_OK)

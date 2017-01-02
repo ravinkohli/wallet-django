@@ -31,13 +31,14 @@ urlpatterns = [
     url(r'^receive/$', receive_money),
     url(r'^wallets/$', WalletList.as_view()),
     url(r'^wallet-details/$', WalletDetail.as_view()),
-    url(r'^transactions/(?P<pk>[0-9]+)/$', TransactionDetail.as_view()),
-    url(r'^users/(?P<pk>[0-9]+)/$', UserDetail.as_view()),
+    url(r'^transactions/$', TransactionDetail.as_view()),
+    url(r'^user/$', UserDetail.as_view()),
     url(r'^api-token-auth/', obtain_expiring_auth_token),
     url(r'^end-session/$', views.logout),
     url(r'^create-user/$', views.createuser),
     url(r'^add_money_api/$', add_money_api),
-    url(r'^send_money/$', send_money)
+    url(r'^send_money/$', send_money),
+    url(r'^sessions/$', get_all_sessions)
 ]
 
 #?P<username> ?P<amount>

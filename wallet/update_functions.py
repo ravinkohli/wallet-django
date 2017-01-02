@@ -6,6 +6,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
+
 def add_transaction(request, data):
     wallet = Wallet.objects.get(username=request.user.username)
     transaction = Transaction(from_name=request.user.username, wallet_id=wallet, date=data["date"], to=data['to'], amount=data["amount"])
@@ -39,6 +40,7 @@ def create_user_api(data):
         return {"status": True}
     else:
         return {"status": False}
+
 
 @csrf_exempt
 def send_money_api(request, data):
@@ -94,6 +96,7 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
                     device_browser=(request.user_agent.browser.family +
                                     request.user_agent.os.family)
                 )
+                token.is_active = True
             data = {'token': token.key}
             return Response(data)
 

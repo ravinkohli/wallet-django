@@ -27,7 +27,7 @@ def user_login(request):
                 # if request.POST['next']:
                 #     return HttpResponseRedirect(request.POST['next'])
                 # else:
-                #     return render(request, '/user_profile.html/', {'user': user, 'wallet': user.userprofile.wallet_id})
+                #    return render(request, '/user_profile.html/', {'user': user, 'wallet': user.userprofile.wallet_id})
             else:
                 return render(request, 'registration/login.html/', {'error': 'User is not active'})
         else:
@@ -74,11 +74,12 @@ def home(request):
 def logout(request):
     if request.user and request.method == "GET":
         token = DeviceToken.objects.get(user=request.user, device_browser=(request.user_agent.browser.family+
-                                                                     request.user_agent.os.family))
-        token.delete()
-        return Response(status=status.HTTP_200_OK)
+                                                                           request.user_agent.os.family))
+        token.expired_date = datetime.datetime.now()
+        token.is_active = False
+        return Response({"errors": "No error"}, status=status.HTTP_200_OK)
     else:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response({"errors": "User invalid or wrong API request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])
@@ -90,7 +91,7 @@ def createuser(request):
         data = JSONParser().parse(request)
         success = create_user_api(data)
         if success["status"]:
-            return Response({"success": "success"}, status=status.HTTP_201_CREATED)
+            return Response({"errors": "No error"}, status=status.HTTP_201_CREATED)
         elif success["errors"]:
             return Response({"errors": success["errors"]}, status=status.HTTP_205_RESET_CONTENT)
         else:

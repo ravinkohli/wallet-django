@@ -15,7 +15,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
-
+import datetime
 
 def validate_not_neg(value):
     if value < 0:
@@ -75,6 +75,8 @@ class DeviceToken(models.Model):
                              on_delete=models.CASCADE,)
     created = models.DateTimeField(_("Created"), auto_now_add=True)
     device_browser = models.CharField(max_length=25, null=True)
+    is_active = models.BooleanField(default=False)
+    expired_date = models.DateField(blank=True, null=True)
 
     class Meta:
         # Work around for a bug in Django:
@@ -89,6 +91,8 @@ class DeviceToken(models.Model):
     def save(self, *args, **kwargs):
         if not self.key:
             self.key = self.generate_key()
+        if not self.expired_date:
+            self.expired_date = self.created.date() + token_settings.EXPIRING_TOKEN_LIFESPAN
         return super(DeviceToken, self).save(*args, **kwargs)
 
     def generate_key(self):
@@ -99,8 +103,8 @@ class DeviceToken(models.Model):
 
     def expired(self):
         """Return boolean indicating token expiration."""
-        now = timezone.now()
-        if self.created < now - token_settings.EXPIRING_TOKEN_LIFESPAN:
-            return True
-
+        if self.is_active:
+            now = timezone.now()
+            if self.created < now - token_settings.EXPIRING_TOKEN_LIFESPAN:
+                return True
         return False

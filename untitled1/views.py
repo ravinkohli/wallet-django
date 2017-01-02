@@ -77,6 +77,7 @@ def logout(request):
                                                                            request.user_agent.os.family))
         token.expired_date = datetime.datetime.now()
         token.is_active = False
+        token.save()
         return Response({"errors": "No error"}, status=status.HTTP_200_OK)
     else:
         return Response({"errors": "User invalid or wrong API request"}, status=status.HTTP_400_BAD_REQUEST)

@@ -92,6 +92,8 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
             token, created = DeviceToken.objects.get_or_create(user=serializer.validated_data['user'], device_browser=(request.user_agent.browser.family+
                                                                                                               request.user_agent.os.family))
 
+            token.is_active = True
+            token.save()
             if token.expired():
                 # If the token is expired, generate a new one.
                 token = DeviceToken.objects.create(
@@ -100,6 +102,7 @@ class ObtainExpiringAuthToken(ObtainAuthToken):
                                     request.user_agent.os.family)
                 )
                 token.is_active = True
+                token.save()
             data = {'token': token.key}
             return Response(data)
 

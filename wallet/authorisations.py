@@ -24,5 +24,7 @@ class TokenAuthentication(TokenAuthentication):
 
         if token.expired():
             raise exceptions.AuthenticationFailed('Token has expired')
+        if not token.is_active:
+            raise exceptions.AuthenticationFailed('Token is inactive')
 
         return (token.user, token)

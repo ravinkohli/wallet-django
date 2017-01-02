@@ -222,14 +222,15 @@ def get_all_sessions(request):
         tokens = DeviceToken.objects.filter(user=request.user)
         sessions = []
         for token in tokens:
+            session = {}
             if token.expired():
                 continue
-            session = {}
-            session["token"] = token.key
-            session["device"] = token.device_browser
-            session["created"] = token.created
-            session["expiry"] = token.expired_date
-            sessions.append(session)
+            if token.is_active:
+                session["token"] = token.key
+                session["device"] = token.device_browser
+                session["created"] = token.created
+                session["active"] = token.is_active
+                sessions.append(session)
         return Response({"sessions": sessions}, status=status.HTTP_200_OK)
 
 

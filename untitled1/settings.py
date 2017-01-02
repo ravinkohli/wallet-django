@@ -43,7 +43,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_expiring_authtoken',
-    'django_user_agents'
+    'django_user_agents',
 )
 
 AUTH_PROFILE_MODULE = 'wallet.Userprofile'

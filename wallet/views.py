@@ -228,10 +228,11 @@ def get_all_sessions(request):
             if token.is_active:
                 session["token"] = token.key
                 session["device"] = token.device_browser
-                session["created"] = token.created
-                session["active"] = token.is_active
+                session["created"] = token.created.strftime(format="%a, %d %b %Y %H:%M")
                 sessions.append(session)
         return Response({"sessions": sessions}, status=status.HTTP_200_OK)
+    else:
+        return Response({"errors": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(["GET"])

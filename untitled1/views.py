@@ -73,11 +73,10 @@ def home(request):
 @permission_classes([IsAuthenticated, ])
 def logout(request):
     if request.user and request.method == "GET":
-        token = DeviceToken.objects.get(user=request.user, device_browser=(request.user_agent.browser.family+
-                                                                           request.user_agent.os.family))
-        token.expired_date = datetime.datetime.now()
-        token.is_active = False
-        token.save()
+
+        request.auth.expired_date = datetime.datetime.now()
+        request.auth.is_active = False
+        request.auth.save()
         return Response({"errors": "No error"}, status=status.HTTP_200_OK)
     else:
         return Response({"errors": "User invalid or wrong API request"}, status=status.HTTP_400_BAD_REQUEST)
@@ -99,3 +98,16 @@ def createuser(request):
             return Response(status=status.HTTP_206_PARTIAL_CONTENT)
 
 
+@api_view(["GET"])
+@authentication_classes([TokenAuthentication, ])
+@permission_classes([IsAuthenticated, ])
+def end_all_sessions(request):
+    if request.user and request.method == "GET":
+        tokens = DeviceToken.objects.filter(user=request.user)
+        for token in tokens:
+            token.expired_date = datetime.datetime.now()
+            token.is_active = False
+            token.save()
+        return Response({"errors": "No error"}, status=status.HTTP_200_OK)
+    else:
+        return Response({"errors": "User invalid or wrong API request"}, status=status.HTTP_400_BAD_REQUEST)
